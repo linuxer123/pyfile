@@ -1,0 +1,64 @@
+#####################################################################################
+# Author: mengwei   email: longfeiyiying@gmail.com
+# last_modify: 2015-01-21
+#####################################################################################
+#!/bin/bash
+IF=`which iptables`
+#内网IP
+IP=192.168.0.199
+#socket=( '192.168.0.88:7777' '192.168.0.88:8888' '192.168.0.215:22' '192.168.0.199:25500' '192.168.0.199:21' '192.168.0.200:80' )
+socket=( '192.168.0.88:7777' '192.168.0.88:8888' )
+$IF -F
+$IF -X
+$IF -Z
+$IF -F -t nat
+$IF -X -t nat
+$IF -Z -t nat
+#INPUT 默认规则
+$IF -P INPUT DROP
+$IF -P OUTPUT DROP
+
+#$IF -t nat -A POSTROUTING  -o eth2 -j MASQUERADE
+#$IF -t nat -A POSTROUTING  -o eth3 -j MASQUERADE
+#for sock in ${socket[*]}
+#do
+#    port=`echo $sock|cut -d':' -f2`
+#    if [ $port -eq 80 ]; then
+#	dport=8080	
+#    else
+#	dport=$port
+#    fi
+#    #内网pc端监控,内网手机端监控,内网server服务器ssh,内网www代理服务器ssh,内网www代理服务器ftp
+#    $IF -t nat -A PREROUTING  -p tcp -m tcp --dport $dport -j DNAT --to-destination $sock
+#    $IF -t nat -A POSTROUTING -p tcp -m tcp --dport $port -j SNAT --to-source $IP
+#done
+#允许本地ftp服务
+$IF -A INPUT  -m state --state ESTABLISHED,RELATED -j ACCEPT
+#$IF -I INPUT -p tcp --dport 21 -j ACCEPT
+$IF -I INPUT -p tcp --dport 7788 -j ACCEPT
+$IF -A INPUT  -p icmp -j ACCEPT
+#$IF -I OUTPUT -p tcp --dport 21 -j ACCEPT
+$IF -A OUTPUT -m state --state RELATED,ESTABLISHED -j ACCEPT
+$IF -A OUTPUT  -p icmp -j ACCEPT
+$IF -A OUTPUT  -p tcp -j ACCEPT
+$IF -A OUTPUT  -p udp -j ACCEPT
+#nginx and php-fpm && mysql service
+#$IF -A INPUT -p tcp --dport 8080 -j ACCEPT
+#允许本地ssh服务
+$IF -A INPUT -p tcp -m state --state NEW -m tcp --dport 25500 -j ACCEPT
+#允许本地ntpd服务 
+$IF -A INPUT -i eth0 -p udp -s 192.168.0.0/24 --dport 123 -j ACCEPT
+#允许本地pptpd服务
+#$IF -A INPUT  -p tcp --dport 1723 -j ACCEPT
+#$IF -A INPUT  -p gre -j ACCEPT
+#$IF -A FORWARD  -j ACCEPT
+#$IF -A INPUT -p icmp -j ACCEPT
+#$IF -A INPUT -i lo -j ACCEPT
+#对网内进行包限制
+#$IF -A FORWARD -m limit -d 192.168.0.0/24 --limit 400/s -j ACCEPT # 这句意思是限定每秒#只转发30个到达192.168.0.2的数据包（约每秒45KB 一个数据包是1.5KB>）
+#$IF -A FORWARD -d 192.168.0.0/24 -j DROP #这句作用是超过限制的到达192.168.0.2的数据包不通过）
+#$IF -A FORWARD -m limit -s 192.168.0.0/24 --limit 600/s -j ACCEPT # 这句意思是限定每秒#只转发30个到达192.168.0.2的数据包（约每秒45KB 一个数据包是1.5KB>）
+#$IF -A FORWARD -s 192.168.0.0/24 -j DROP #这句作用是超过限制的到达192.168.0.2的数据包不通过）
+
+#$IF -A FORWARD -m limit  -d !192.168.0.172/24 --limit 400/s -j ACCEPT # 这句意思是限定每秒#只转发30个到达192.168.0.2的数据包（约每秒45KB 一个数据包是1.5KB>）
+#$IF -A FORWARD -d !192.168.0.172/24 -j DROP
